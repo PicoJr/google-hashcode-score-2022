@@ -2,19 +2,19 @@
 extern crate clap;
 extern crate anyhow;
 
-use std::path::PathBuf;
-use std::fs::read_to_string;
-use std::str::FromStr;
-use anyhow::bail;
-use log::info;
-use num_format::{Locale, ToFormattedString};
+use crate::parser::{parse_input, parse_output};
 use crate::score::Score;
-use crate::parser::parse_input;
+use anyhow::bail;
+use log::{debug, info};
+use num_format::{Locale, ToFormattedString};
+use std::fs::read_to_string;
+use std::path::PathBuf;
+use std::str::FromStr;
 
 mod cli;
 mod data;
-mod score;
 mod parser;
+mod score;
 
 fn main() -> anyhow::Result<()> {
     // cf https://crates.io/crates/env_logger
@@ -41,13 +41,14 @@ fn main() -> anyhow::Result<()> {
         let output_content = read_to_string(path)?;
         info!("parsing {}", output_file_path);
         // parsing output first since it is most likely to fail
-        // let output_data = parse_output(&output_content)?;
+        let output_data = parse_output(&output_content)?;
+        debug!("{:?}", output_data);
 
         let path = PathBuf::from_str(input_file_path)?;
         let input_content = read_to_string(path)?;
         info!("parsing {}", input_file_path);
         let input_data = parse_input(&input_content)?;
-        println!("{:?}", input_data);
+        debug!("{:?}", input_data);
 
         // let score = compute_score(&input_data, &output_data);
         let score = 0;
