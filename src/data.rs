@@ -1,4 +1,5 @@
 pub type Role = String;
+pub type Id = usize;
 
 #[derive(Debug, PartialEq)]
 pub struct PContributorSkill {
@@ -11,6 +12,7 @@ pub struct PContributor {
     pub name: String,
     pub n_skills: usize,
     pub skills: Vec<PContributorSkill>,
+    pub id: Id,
 }
 
 #[derive(Debug, PartialEq)]
@@ -21,6 +23,7 @@ pub struct PProject {
     pub best_before: usize,
     pub n_roles: usize,
     pub skills: Vec<PContributorSkill>,
+    pub id: Id,
 }
 
 #[derive(Debug, PartialEq)]
@@ -32,7 +35,7 @@ pub struct PInput {
 }
 
 #[derive(Debug, PartialEq)]
-pub struct PlannedProject {
+pub struct PPlannedProject {
     pub name: String,
     pub roles: Vec<Role>, // contributors name
 }
@@ -40,5 +43,5 @@ pub struct PlannedProject {
 #[derive(Debug, PartialEq)]
 pub struct POutput {
     pub n_projects: usize,
-    pub projects: Vec<PlannedProject>,
+    pub projects: Vec<PPlannedProject>,
 }

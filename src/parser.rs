@@ -1,12 +1,12 @@
 use anyhow::bail;
-use nom::bytes::complete::{tag, take_while1, take_while_m_n};
-use nom::combinator::{map_res, verify};
+use nom::bytes::complete::{take_while1, take_while_m_n};
+use nom::combinator::map_res;
 use nom::error::{context, convert_error, VerboseError};
-use nom::multi::{many1, many_m_n, separated_list1};
+use nom::multi::{many_m_n, separated_list1};
 use nom::sequence::{terminated, tuple};
 use nom::IResult;
 
-use crate::data::{PContributor, PContributorSkill, PInput, POutput, PProject, PlannedProject};
+use crate::data::{PContributor, PContributorSkill, PInput, POutput, PPlannedProject, PProject};
 use nom::character::complete::line_ending;
 
 pub(crate) type N = usize;
@@ -26,13 +26,6 @@ fn single_space(input: &str) -> Res<&str, &str> {
 
 fn non_space_or_unix_eol(input: &str) -> Res<&str, &str> {
     take_while1(|c: char| c != ' ' && c != '\n')(input)
-}
-
-fn str_list_exact(s: &str, expected_size: usize) -> Res<&str, Vec<&str>> {
-    verify(
-        separated_list1(single_space, non_space_or_unix_eol),
-        |s: &[&str]| s.len() == expected_size,
-    )(s)
 }
 
 fn contributor_skill(input: &str) -> Res<&str, PContributorSkill> {
@@ -63,6 +56,7 @@ fn contributor(input: &str) -> Res<&str, PContributor> {
             name: name.to_string(),
             n_skills,
             skills,
+            id: 0,
         },
     ))
 }
@@ -83,6 +77,7 @@ fn project(input: &str) -> Res<&str, PProject> {
             best_before,
             n_roles,
             skills,
+            id: 0,
         },
     ))
 }
@@ -92,8 +87,14 @@ fn _parse_input(input: &str) -> Res<&str, PInput> {
         tuple((positive_number, single_space, positive_number)),
         line_ending,
     )(input)?;
-    let (i, contributors) = many_m_n(n_contributors, n_contributors, contributor)(i)?;
-    let (i, projects) = many_m_n(n_projects, n_projects, project)(i)?;
+    let (i, mut contributors) = many_m_n(n_contributors, n_contributors, contributor)(i)?;
+    for (id, c) in contributors.iter_mut().enumerate() {
+        c.id = id;
+    }
+    let (i, mut projects) = many_m_n(n_projects, n_projects, project)(i)?;
+    for (id, mut p) in projects.iter_mut().enumerate() {
+        p.id = id;
+    }
     Ok((
         i,
         PInput {
@@ -113,7 +114,7 @@ pub fn parse_input(s: &str) -> anyhow::Result<PInput> {
     }
 }
 
-pub fn planned_project(input: &str) -> Res<&str, PlannedProject> {
+pub fn planned_project(input: &str) -> Res<&str, PPlannedProject> {
     let (i, name) = terminated(non_space_or_unix_eol, line_ending)(input)?;
     let (i, roles) = terminated(
         separated_list1(single_space, non_space_or_unix_eol),
@@ -121,7 +122,7 @@ pub fn planned_project(input: &str) -> Res<&str, PlannedProject> {
     )(i)?;
     Ok((
         i,
-        PlannedProject {
+        PPlannedProject {
             name: name.to_string(),
             roles: roles.iter().map(|s| String::from(*s)).collect(),
         },

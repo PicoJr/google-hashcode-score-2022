@@ -3,7 +3,7 @@ extern crate clap;
 extern crate anyhow;
 
 use crate::parser::{parse_input, parse_output};
-use crate::score::Score;
+use crate::score::{compute_score, Score};
 use anyhow::bail;
 use log::{debug, info};
 use num_format::{Locale, ToFormattedString};
@@ -50,8 +50,7 @@ fn main() -> anyhow::Result<()> {
         let input_data = parse_input(&input_content)?;
         debug!("{:?}", input_data);
 
-        // let score = compute_score(&input_data, &output_data);
-        let score = 0;
+        let score = compute_score(&input_data, &output_data)?;
         total_score += score;
         let formatted_score = score.to_formatted_string(&Locale::en);
         println!("{} score: {}", output_file_path, formatted_score);
