@@ -12,7 +12,7 @@ pub struct PContributor {
     pub name: String,
     pub n_skills: usize,
     pub skills: Vec<PContributorSkill>,
-    pub id: Id,
+    pub id: Id, // initialized during parsing
 }
 
 #[derive(Debug, PartialEq)]
@@ -23,7 +23,7 @@ pub struct PProject {
     pub best_before: usize,
     pub n_roles: usize,
     pub skills: Vec<PContributorSkill>,
-    pub id: Id,
+    pub id: Id, // initialized during parsing
 }
 
 #[derive(Debug, PartialEq)]

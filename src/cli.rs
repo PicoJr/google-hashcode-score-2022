@@ -8,7 +8,7 @@ pub fn get_command() -> Command<'static> {
         .arg(
             Arg::new("input")
                 .help("input file paths")
-                .multiple_occurrences(true)
+                .multiple_values(true)
                 .required(true)
                 .takes_value(true),
         )
@@ -16,7 +16,7 @@ pub fn get_command() -> Command<'static> {
             Arg::new("output")
                 .short('o')
                 .help("output file paths (one for each input provided file)")
-                .multiple_occurrences(true)
+                .multiple_values(true)
                 .required(true)
                 .takes_value(true),
         )
