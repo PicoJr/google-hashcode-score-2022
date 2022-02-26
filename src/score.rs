@@ -10,7 +10,7 @@ pub(crate) type Level = usize;
 pub(crate) type LevelMap = AHashMap<(Id, Id), Level>; // contributor id, skill id, level
 
 #[derive(Debug)]
-pub struct Contributor {
+struct Contributor {
     id: Id,
     name: String,
     skills: Vec<Id>,
@@ -18,7 +18,7 @@ pub struct Contributor {
 }
 
 #[derive(Debug)]
-pub struct Project {
+struct Project {
     id: Id,
     name: String,
     skills: Vec<(Id, Level)>,
@@ -28,20 +28,20 @@ pub struct Project {
 }
 
 #[derive(Debug)]
-pub struct PlannedProject {
+struct PlannedProject {
     id: Id,
     contributors: Vec<Id>,
 }
 
 #[derive(Debug)]
-pub struct PreComputed {
+struct PreComputed {
     contributors_id: AHashMap<String, Id>,
     projects_id: AHashMap<String, Id>,
     skills_id: AHashMap<String, Id>,
     levels: LevelMap,
 }
 
-pub fn precompute_from_input(input: &PInput) -> (PreComputed, Vec<Contributor>, Vec<Project>) {
+fn precompute_from_input(input: &PInput) -> (PreComputed, Vec<Contributor>, Vec<Project>) {
     let mut projects_id: AHashMap<String, Id> = AHashMap::new();
     let mut projects: Vec<Project> = Vec::with_capacity(input.projects.len());
     let mut skills_id: AHashMap<String, Id> = AHashMap::new();
@@ -115,7 +115,7 @@ pub fn precompute_from_input(input: &PInput) -> (PreComputed, Vec<Contributor>, 
     )
 }
 
-pub fn precompute_from_output(
+fn precompute_from_output(
     precomputed: &PreComputed,
     output: &POutput,
 ) -> anyhow::Result<Vec<PlannedProject>> {

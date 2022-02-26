@@ -1,19 +1,19 @@
 use anyhow::bail;
 use nom::bytes::complete::{take_while1, take_while_m_n};
 use nom::combinator::map_res;
-use nom::error::{context, convert_error, VerboseError};
+use nom::error::{convert_error, VerboseError};
 use nom::multi::{many_m_n, separated_list1};
 use nom::sequence::{terminated, tuple};
 use nom::IResult;
 
 use crate::data::{PContributor, PContributorSkill, PInput, POutput, PPlannedProject, PProject};
-use nom::character::complete::line_ending;
+use nom::character::complete::{digit1, line_ending};
 
 pub(crate) type N = usize;
 pub(crate) type Res<T, U> = IResult<T, U, VerboseError<T>>;
 
 fn number(input: &str) -> Res<&str, &str> {
-    context("number", take_while1(|c: char| c.is_digit(10)))(input)
+    digit1(input)
 }
 
 fn positive_number(input: &str) -> Res<&str, N> {
@@ -114,7 +114,7 @@ pub fn parse_input(s: &str) -> anyhow::Result<PInput> {
     }
 }
 
-pub fn planned_project(input: &str) -> Res<&str, PPlannedProject> {
+fn planned_project(input: &str) -> Res<&str, PPlannedProject> {
     let (i, name) = terminated(non_space_or_unix_eol, line_ending)(input)?;
     let (i, roles) = terminated(
         separated_list1(single_space, non_space_or_unix_eol),
@@ -129,7 +129,7 @@ pub fn planned_project(input: &str) -> Res<&str, PPlannedProject> {
     ))
 }
 
-pub fn _parse_output(input: &str) -> Res<&str, POutput> {
+fn _parse_output(input: &str) -> Res<&str, POutput> {
     let (i, n_projects) = terminated(positive_number, line_ending)(input)?;
     let (i, projects) = many_m_n(n_projects, n_projects, planned_project)(i)?;
     Ok((
