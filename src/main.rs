@@ -5,7 +5,7 @@ extern crate anyhow;
 use crate::parser::{parse_input, parse_output};
 use crate::score::{compute_score, Score};
 use anyhow::bail;
-use log::{debug, info};
+use log::{debug, info, warn};
 use num_format::{Locale, ToFormattedString};
 use std::fs::read_to_string;
 use std::path::PathBuf;
@@ -34,6 +34,10 @@ fn main() -> anyhow::Result<()> {
             input_files.len()
         );
     }
+    let disable_checks = matches.is_present("disable-checks");
+    if disable_checks {
+        warn!("checks are disabled, score may be overestimated if output files are incorrect.")
+    }
     let mut total_score: Score = 0;
     let input_output_files = input_files.zip(output_files);
     for (input_file_path, output_file_path) in input_output_files {
@@ -50,7 +54,7 @@ fn main() -> anyhow::Result<()> {
         let input_data = parse_input(&input_content)?;
         debug!("{:?}", input_data);
 
-        let score = compute_score(&input_data, &output_data)?;
+        let score = compute_score(&input_data, &output_data, disable_checks)?;
         total_score += score;
         let formatted_score = score.to_formatted_string(&Locale::en);
         println!("{} score: {}", output_file_path, formatted_score);

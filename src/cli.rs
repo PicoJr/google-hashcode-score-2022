@@ -20,4 +20,11 @@ pub fn get_command() -> Command<'static> {
                 .required(true)
                 .takes_value(true),
         )
+        .arg(
+            Arg::new("disable-checks")
+                .long("--disable-checks")
+                .help("disable checks (contributors level)")
+                .required(false)
+                .takes_value(false),
+        )
 }
