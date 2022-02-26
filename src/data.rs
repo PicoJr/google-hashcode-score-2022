@@ -1,4 +1,4 @@
-pub type Role = String;
+pub type Name = String;
 pub type Id = usize;
 
 #[derive(Debug, PartialEq)]
@@ -37,7 +37,7 @@ pub struct PInput {
 #[derive(Debug, PartialEq)]
 pub struct PPlannedProject {
     pub name: String,
-    pub roles: Vec<Role>, // contributors name
+    pub contributor_names: Vec<Name>, // contributors name
 }
 
 #[derive(Debug, PartialEq)]

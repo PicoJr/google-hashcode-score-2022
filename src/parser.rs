@@ -124,7 +124,7 @@ pub fn planned_project(input: &str) -> Res<&str, PPlannedProject> {
         i,
         PPlannedProject {
             name: name.to_string(),
-            roles: roles.iter().map(|s| String::from(*s)).collect(),
+            contributor_names: roles.iter().map(|s| String::from(*s)).collect(),
         },
     ))
 }

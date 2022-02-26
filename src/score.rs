@@ -43,12 +43,12 @@ pub struct PreComputed {
 
 pub fn precompute_from_input(input: &PInput) -> (PreComputed, Vec<Contributor>, Vec<Project>) {
     let mut projects_id: AHashMap<String, Id> = AHashMap::new();
-    let mut projects: Vec<Project> = vec![];
+    let mut projects: Vec<Project> = Vec::with_capacity(input.projects.len());
     let mut skills_id: AHashMap<String, Id> = AHashMap::new();
     let mut skill_id: Id = 0;
     for project in &input.projects {
         projects_id.insert(project.name.clone(), project.id);
-        let mut skills = vec![];
+        let mut skills = Vec::with_capacity(project.skills.len());
         for skill in &project.skills {
             let current_skill_id = if let Some(existing_id) = skills_id.get(&*skill.name) {
                 *existing_id
@@ -73,11 +73,11 @@ pub fn precompute_from_input(input: &PInput) -> (PreComputed, Vec<Contributor>, 
         })
     }
     let mut contributors_id: AHashMap<String, Id> = AHashMap::new();
-    let mut contributors = vec![];
+    let mut contributors = Vec::with_capacity(input.contributors.len());
     let mut levels: AHashMap<(Id, Id), Level> = AHashMap::new();
     for contributor in &input.contributors {
         contributors_id.insert(contributor.name.clone(), contributor.id);
-        let mut skills: Vec<Id> = vec![];
+        let mut skills: Vec<Id> = Vec::with_capacity(contributor.skills.len());
         for skill in &contributor.skills {
             if let Some(contributor_skill_id) = skills_id.get(&*skill.name) {
                 skills.push(*contributor_skill_id);
@@ -96,11 +96,6 @@ pub fn precompute_from_input(input: &PInput) -> (PreComputed, Vec<Contributor>, 
                 skill_id += 1;
             }
         }
-        let skills = contributor
-            .skills
-            .iter()
-            .map(|skill| skills_id.get(&*skill.name).cloned().unwrap_or(0))
-            .collect();
         contributors.push(Contributor {
             id: contributor.id,
             name: contributor.name.clone(),
@@ -120,28 +115,34 @@ pub fn precompute_from_input(input: &PInput) -> (PreComputed, Vec<Contributor>, 
     )
 }
 
-pub fn precompute_from_output(precomputed: &PreComputed, output: &POutput) -> Vec<PlannedProject> {
-    let mut planned_projects: Vec<PlannedProject> = vec![];
+pub fn precompute_from_output(
+    precomputed: &PreComputed,
+    output: &POutput,
+) -> anyhow::Result<Vec<PlannedProject>> {
+    let mut planned_projects: Vec<PlannedProject> = Vec::with_capacity(output.projects.len());
     for project in &output.projects {
-        let mut contributors = vec![];
-        for role in &project.roles {
-            let role_id = precomputed
-                .contributors_id
-                .get(&*role)
-                .cloned()
-                .unwrap_or(0);
-            contributors.push(role_id);
+        let mut contributors = Vec::with_capacity(project.contributor_names.len());
+        for contributor_name in &project.contributor_names {
+            if let Some(contributor_id) = precomputed.contributors_id.get(&*contributor_name) {
+                contributors.push(*contributor_id);
+            } else {
+                bail!(
+                    "unknown contributor {} for project {}",
+                    contributor_name,
+                    project.name
+                );
+            }
         }
-        planned_projects.push(PlannedProject {
-            id: precomputed
-                .projects_id
-                .get(&*project.name)
-                .cloned()
-                .unwrap_or(0),
-            contributors,
-        })
+        if let Some(project_id) = precomputed.projects_id.get(&*project.name) {
+            planned_projects.push(PlannedProject {
+                id: *project_id,
+                contributors,
+            })
+        } else {
+            bail!("unknown project {}", project.name);
+        }
     }
-    planned_projects
+    Ok(planned_projects)
 }
 
 fn check_contributors_level(
@@ -195,7 +196,7 @@ fn project_score(project_start_time: Time, project: &Project) -> (Score, Time) {
     };
 
     debug!(
-        "just finished {} (start {}, end {}, late {}, score {})",
+        "project {}: (start = {}, end = {}, late = {}, score = {})",
         project.id, project_start_time, project_end_time, days_late, score_increment
     );
     (score_increment, project_end_time)
@@ -222,9 +223,17 @@ fn update_level(project: &Project, planned_project: &PlannedProject, levels_map:
         {
             if *contributor_level <= *level_required {
                 *contributor_level += 1;
+                debug!(
+                    "contributor {} reached level {} in {}",
+                    contributor_for_this_role_id, contributor_level, skill_id
+                );
             }
         } else {
             levels_map.insert((*contributor_for_this_role_id, *skill_id), 1);
+            debug!(
+                "contributor {} reached level {} in {}",
+                contributor_for_this_role_id, 1, skill_id
+            );
         }
     }
 }
@@ -235,7 +244,7 @@ pub fn compute_score(
     disable_checks: bool,
 ) -> anyhow::Result<Score> {
     let (mut precomputed, mut contributors, projects) = precompute_from_input(input);
-    let planned_projects = precompute_from_output(&precomputed, output);
+    let planned_projects = precompute_from_output(&precomputed, output)?;
 
     debug!("{:?}", precomputed);
     debug!("{:?}", contributors);
