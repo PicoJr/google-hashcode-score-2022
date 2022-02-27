@@ -1,24 +1,29 @@
 use crate::data::{Id, PInput, POutput};
-use ahash::AHashMap;
 use anyhow::bail;
+use fxhash::FxHashMap;
 use log::debug;
 use std::cmp::max;
+
+use serde::{Deserialize, Serialize};
+use std::fs::File;
+use std::io::{BufReader, Write};
+use std::path::Path;
 
 pub(crate) type Score = usize;
 pub(crate) type Time = usize;
 pub(crate) type Level = usize;
-pub(crate) type LevelMap = AHashMap<(Id, Id), Level>; // contributor id, skill id, level
+pub(crate) type LevelMap = FxHashMap<(Id, Id), Level>; // contributor id, skill id, level
 
-#[derive(Debug)]
-struct Contributor {
+#[derive(Serialize, Deserialize, Debug)]
+pub(crate) struct Contributor {
     id: Id,
     name: String,
     skills: Vec<Id>,
     next_availability: Time,
 }
 
-#[derive(Debug)]
-struct Project {
+#[derive(Serialize, Deserialize, Debug)]
+pub(crate) struct Project {
     id: Id,
     name: String,
     skills: Vec<(Id, Level)>,
@@ -27,24 +32,26 @@ struct Project {
     best_before: usize,
 }
 
+#[derive(Serialize, Deserialize, Debug)]
+pub(crate) struct PreComputed {
+    contributors_id: FxHashMap<String, Id>,
+    projects_id: FxHashMap<String, Id>,
+    skills_id: FxHashMap<String, Id>,
+    levels: LevelMap,
+    contributors: Vec<Contributor>,
+    projects: Vec<Project>,
+}
+
 #[derive(Debug)]
-struct PlannedProject {
+pub(crate) struct PlannedProject {
     id: Id,
     contributors: Vec<Id>,
 }
 
-#[derive(Debug)]
-struct PreComputed {
-    contributors_id: AHashMap<String, Id>,
-    projects_id: AHashMap<String, Id>,
-    skills_id: AHashMap<String, Id>,
-    levels: LevelMap,
-}
-
-fn precompute_from_input(input: &PInput) -> (PreComputed, Vec<Contributor>, Vec<Project>) {
-    let mut projects_id: AHashMap<String, Id> = AHashMap::new();
+pub(crate) fn precompute_from_input(input: &PInput) -> PreComputed {
+    let mut projects_id: FxHashMap<String, Id> = FxHashMap::default();
     let mut projects: Vec<Project> = Vec::with_capacity(input.projects.len());
-    let mut skills_id: AHashMap<String, Id> = AHashMap::new();
+    let mut skills_id: FxHashMap<String, Id> = FxHashMap::default();
     let mut skill_id: Id = 0;
     for project in &input.projects {
         projects_id.insert(project.name.clone(), project.id);
@@ -72,9 +79,9 @@ fn precompute_from_input(input: &PInput) -> (PreComputed, Vec<Contributor>, Vec<
             best_before: project.best_before,
         })
     }
-    let mut contributors_id: AHashMap<String, Id> = AHashMap::new();
+    let mut contributors_id: FxHashMap<String, Id> = FxHashMap::default();
     let mut contributors = Vec::with_capacity(input.contributors.len());
-    let mut levels: AHashMap<(Id, Id), Level> = AHashMap::new();
+    let mut levels: FxHashMap<(Id, Id), Level> = FxHashMap::default();
     for contributor in &input.contributors {
         contributors_id.insert(contributor.name.clone(), contributor.id);
         let mut skills: Vec<Id> = Vec::with_capacity(contributor.skills.len());
@@ -103,16 +110,14 @@ fn precompute_from_input(input: &PInput) -> (PreComputed, Vec<Contributor>, Vec<
             next_availability: 0, // ready to work on project at t = 0
         })
     }
-    (
-        PreComputed {
-            contributors_id,
-            projects_id,
-            skills_id,
-            levels,
-        },
+    PreComputed {
+        contributors_id,
+        projects_id,
+        skills_id,
+        levels,
         contributors,
         projects,
-    )
+    }
 }
 
 fn precompute_from_output(
@@ -238,15 +243,37 @@ fn update_level(project: &Project, planned_project: &PlannedProject, levels_map:
     }
 }
 
-pub fn compute_score(
-    input: &PInput,
+pub(crate) fn decode_precomputed(bin_path: &Path) -> anyhow::Result<PreComputed> {
+    let file = File::open(bin_path)?;
+    let reader = BufReader::new(file);
+    let decoded: PreComputed = bincode::deserialize_from(reader)?;
+    Ok(decoded)
+}
+
+pub(crate) fn encode_precomputed(precomputed: &PreComputed, bin_path: &Path) -> anyhow::Result<()> {
+    let encoded: Vec<u8> = bincode::serialize(&precomputed)?;
+    let mut output = File::create(bin_path)?;
+    output.write_all(encoded.as_slice())?;
+    Ok(())
+}
+
+#[allow(unused)]
+fn compute_score(input: &PInput, output: &POutput, disable_checks: bool) -> anyhow::Result<Score> {
+    let mut precomputed = precompute_from_input(input);
+    debug!("{:?}", precomputed);
+
+    compute_score_precomputed(&mut precomputed, output, disable_checks)
+}
+
+pub(crate) fn compute_score_precomputed(
+    precomputed: &mut PreComputed,
     output: &POutput,
     disable_checks: bool,
 ) -> anyhow::Result<Score> {
-    let (mut precomputed, mut contributors, projects) = precompute_from_input(input);
-    let planned_projects = precompute_from_output(&precomputed, output)?;
+    let planned_projects = precompute_from_output(precomputed, output)?;
+    let mut contributors = &mut precomputed.contributors;
+    let projects = &precomputed.projects;
 
-    debug!("{:?}", precomputed);
     debug!("{:?}", contributors);
     debug!("{:?}", projects);
     debug!("{:?}", planned_projects);

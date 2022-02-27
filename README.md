@@ -46,32 +46,56 @@ total score: 2,745,857
 
 > Note: only `out/a_an_example.in.txt.out` is provided for now as the extended round is ongoing.
 
-### Performance
+## Performance
 
 cpu: `AMD Ryzen 7 3700X`
+
+### With checks enabled (without cache)
 
 ```
 ❯ hyperfine "cargo run --release res/*.txt -o out/*.out"
 Benchmark 1: cargo run --release res/*.txt -o out/*.out
-  Time (mean ± σ):     213.5 ms ±   6.1 ms    [User: 189.1 ms, System: 23.7 ms]
-  Range (min … max):   205.9 ms … 226.7 ms    13 runs
+  Time (mean ± σ):     198.3 ms ±   1.1 ms    [User: 175.3 ms, System: 22.3 ms]
+  Range (min … max):   196.3 ms … 201.6 ms    15 runs
 ```
 
-with checks disabled:
+### With checks disabled (without cache)
 
 ```
 ❯ hyperfine "cargo run --release res/*.txt -o out/*.out --disable-checks"
 Benchmark 1: cargo run --release res/*.txt -o out/*.out --disable-checks
-  Time (mean ± σ):     189.5 ms ±   2.4 ms    [User: 166.8 ms, System: 22.0 ms]
-  Range (min … max):   186.2 ms … 194.5 ms    15 runs
+  Time (mean ± σ):     184.9 ms ±   4.1 ms    [User: 162.5 ms, System: 21.8 ms]
+  Range (min … max):   181.4 ms … 197.8 ms    15 runs
 ```
 
-### Enable debug logs
+### With checks enabled (with cache)
+
+Prerequisite: run once with `cargo run --release res/*.txt -o out/*.out --disable-checks --cache` (generate `.bin` files)
+
+```
+❯ hyperfine "cargo run --release res/*.bin -o out/*.out"
+Benchmark 1: cargo run --release res/*.bin -o out/*.out
+  Time (mean ± σ):     125.4 ms ±   1.1 ms    [User: 109.0 ms, System: 16.0 ms]
+  Range (min … max):   124.2 ms … 128.3 ms    23 runs
+```
+
+### With checks disabled (with cache)
+
+Prerequisite: run once with `cargo run --release res/*.txt -o out/*.out --disable-checks --cache` (generate `.bin` files)
+
+```
+❯ hyperfine "cargo run --release res/*.bin -o out/*.out --disable-checks"
+Benchmark 1: cargo run --release res/*.bin -o out/*.out --disable-checks
+  Time (mean ± σ):     110.4 ms ±   1.9 ms    [User: 91.6 ms, System: 18.5 ms]
+  Range (min … max):   107.7 ms … 115.4 ms    26 runs
+```
+
+## Enable debug logs
 
 ```
 RUST_LOG=debug cargo run res/a_an_example.in.txt -o out/a_an_example.in.txt.out
 ```
 
-### License
+## License
 
 Dual-licensed under MIT or the Apache License V2.0.

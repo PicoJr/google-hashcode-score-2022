@@ -27,4 +27,11 @@ pub fn get_command() -> Command<'static> {
                 .required(false)
                 .takes_value(false),
         )
+        .arg(
+            Arg::new("cache")
+                .long("--cache")
+                .help("generate cache files (.bin files)")
+                .required(false)
+                .takes_value(false),
+        )
 }

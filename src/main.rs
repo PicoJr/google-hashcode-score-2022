@@ -1,12 +1,16 @@
 #[macro_use]
 extern crate clap;
 extern crate anyhow;
+extern crate fxhash;
 
 use crate::parser::{parse_input, parse_output};
-use crate::score::{compute_score, Score};
+use crate::score::{
+    compute_score_precomputed, decode_precomputed, encode_precomputed, precompute_from_input, Score,
+};
 use anyhow::bail;
 use log::{debug, info, warn};
 use num_format::{Locale, ToFormattedString};
+use std::ffi::OsString;
 use std::fs::read_to_string;
 use std::path::PathBuf;
 use std::str::FromStr;
@@ -38,6 +42,10 @@ fn main() -> anyhow::Result<()> {
     if disable_checks {
         warn!("checks are disabled, score may be overestimated if output files are incorrect.")
     }
+    let generate_cache_files = matches.is_present("cache");
+    if generate_cache_files {
+        warn!("cache file will be generated, expect slight performance degradation for this run.")
+    }
     let mut total_score: Score = 0;
     let input_output_files = input_files.zip(output_files);
     for (input_file_path, output_file_path) in input_output_files {
@@ -49,12 +57,22 @@ fn main() -> anyhow::Result<()> {
         debug!("{:?}", output_data);
 
         let path = PathBuf::from_str(input_file_path)?;
-        let input_content = read_to_string(path)?;
-        info!("parsing {}", input_file_path);
-        let input_data = parse_input(&input_content)?;
-        debug!("{:?}", input_data);
+        let mut precomputed = if path.extension() == Some(&OsString::from_str("bin").unwrap()) {
+            decode_precomputed(&path)?
+        } else {
+            let input_content = read_to_string(&path)?;
+            info!("parsing {}", input_file_path);
+            let input_data = parse_input(&input_content)?;
+            debug!("{:?}", input_data);
+            let precomputed = precompute_from_input(&input_data);
+            if generate_cache_files {
+                let dump_path = PathBuf::from(&path).with_extension("bin");
+                encode_precomputed(&precomputed, &dump_path)?;
+            }
+            precomputed
+        };
 
-        let score = compute_score(&input_data, &output_data, disable_checks)?;
+        let score = compute_score_precomputed(&mut precomputed, &output_data, disable_checks)?;
         total_score += score;
         let formatted_score = score.to_formatted_string(&Locale::en);
         println!("{} score: {}", output_file_path, formatted_score);
