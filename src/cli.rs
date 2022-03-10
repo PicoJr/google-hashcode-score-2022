@@ -7,16 +7,8 @@ pub fn get_command() -> Command<'static> {
         .about("Google Hashcode Score Calculator")
         .arg(
             Arg::new("input")
-                .help("input file paths")
-                .multiple_values(true)
-                .required(true)
-                .takes_value(true),
-        )
-        .arg(
-            Arg::new("output")
-                .short('o')
-                .help("output file paths (one for each input provided file)")
-                .multiple_values(true)
+                .help("input file path")
+                .multiple_values(false)
                 .required(true)
                 .takes_value(true),
         )

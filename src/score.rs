@@ -14,7 +14,7 @@ pub(crate) type Time = usize;
 pub(crate) type Level = usize;
 pub(crate) type LevelMap = FxHashMap<(Id, Id), Level>; // contributor id, skill id, level
 
-#[derive(Serialize, Deserialize, Debug)]
+#[derive(Serialize, Deserialize, Debug, Clone)]
 pub(crate) struct Contributor {
     id: Id,
     name: String,
@@ -257,21 +257,14 @@ pub(crate) fn encode_precomputed(precomputed: &PreComputed, bin_path: &Path) -> 
     Ok(())
 }
 
-#[allow(unused)]
-fn compute_score(input: &PInput, output: &POutput, disable_checks: bool) -> anyhow::Result<Score> {
-    let mut precomputed = precompute_from_input(input);
-    debug!("{:?}", precomputed);
-
-    compute_score_precomputed(&mut precomputed, output, disable_checks)
-}
-
 pub(crate) fn compute_score_precomputed(
-    precomputed: &mut PreComputed,
+    precomputed: &PreComputed,
     output: &POutput,
     disable_checks: bool,
 ) -> anyhow::Result<Score> {
     let planned_projects = precompute_from_output(precomputed, output)?;
-    let mut contributors = &mut precomputed.contributors;
+    let mut contributors = precomputed.contributors.clone();
+    let mut level_maps = precomputed.levels.clone();
     let projects = &precomputed.projects;
 
     debug!("{:?}", contributors);
@@ -300,7 +293,7 @@ pub(crate) fn compute_score_precomputed(
                     project,
                     planned_project,
                     &project_contributors,
-                    &precomputed.levels,
+                    &level_maps,
                 )?;
             }
 
@@ -318,7 +311,7 @@ pub(crate) fn compute_score_precomputed(
             }
 
             // update contributors level
-            update_level(project, planned_project, &mut precomputed.levels);
+            update_level(project, planned_project, &mut level_maps);
         } else {
             bail!("unknown project {}", planned_project.id);
         }
