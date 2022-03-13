@@ -8,7 +8,7 @@ pub fn get_command() -> Command<'static> {
         .arg(
             Arg::new("input")
                 .help("input file path")
-                .multiple_values(false)
+                .multiple_values(true)
                 .required(true)
                 .takes_value(true),
         )
