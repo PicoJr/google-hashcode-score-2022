@@ -1,0 +1,6 @@
+curl --silent --request POST --data-binary @out/a_an_example.in.txt.out http://localhost:3000/score/0
+curl --silent --request POST --data-binary @out/b_better_start_small.in.txt.out http://localhost:3000/score/1
+curl --silent --request POST --data-binary @out/c_collaboration.in.txt.out http://localhost:3000/score/2
+curl --silent --request POST --data-binary @out/d_dense_schedule.in.txt.out http://localhost:3000/score/3
+curl --silent --request POST --data-binary @out/e_exceptional_skills.in.txt.out http://localhost:3000/score/4
+curl --silent --request POST --data-binary @out/f_find_great_mentors.in.txt.out http://localhost:3000/score/5

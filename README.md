@@ -26,74 +26,93 @@ curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh
 
 refer to https://rustup.rs (download and run `rustup-init.exe`)
 
-### Compile and run
+### Compile and start server
 
 ```
-cargo run --release res/*.txt -o out/*.out
+❯ cargo run --release res/*.txt
 ```
 
 output:
 
 ```
-out/a_an_example.in.txt.out score: 33
-out/b_better_start_small.in.txt.out score: 275,518
-out/c_collaboration.in.txt.out score: 167,256
-out/d_dense_schedule.in.txt.out score: 251,751
-out/e_exceptional_skills.in.txt.out score: 1,594,950
-out/f_find_great_mentors.in.txt.out score: 456,349
-total score: 2,745,857
+Finished release [optimized + debuginfo] target(s) in 0.04s
+Running `target/release/google-hashcode-score-2022 res/a_an_example.in.txt res/b_better_start_small.in.txt res/c_collaboration.in.txt res/d_dense_schedule.in.txt res/e_exceptional_skills.in.txt res/f_find_great_mentors.in.txt`
+Listening on http://([127, 0, 0, 1], 3000)
 ```
 
-> Note: only `out/a_an_example.in.txt.out` is provided for now as the extended round is ongoing.
+### Submit scores
+
+Using [jq](https://github.com/stedolan/jq) to parse JSON response.
+
+```
+curl --silent --request POST --data-binary @out/a_an_example.in.txt.out http://localhost:3000/score/0 | jq .score
+```
+
+> `33`
+
+```
+curl --silent --request POST --data-binary @out/b_better_start_small.in.txt.out http://localhost:3000/score/1 | jq .score
+```
+
+> `275518`
+
+```
+curl --silent --request POST --data-binary @out/c_collaboration.in.txt.out http://localhost:3000/score/2 | jq .score
+```
+
+> `167256`
+
+```
+curl --silent --request POST --data-binary @out/d_dense_schedule.in.txt.out http://localhost:3000/score/3 | jq .score
+```
+
+> `251751`
+
+```
+curl --silent --request POST --data-binary @out/e_exceptional_skills.in.txt.out http://localhost:3000/score/4 | jq .score
+```
+
+> `1594950`
+
+```
+curl --silent --request POST --data-binary @out/f_find_great_mentors.in.txt.out http://localhost:3000/score/5 | jq .score
+```
+
+> `456349`
+
 
 ## Performance
 
 cpu: `AMD Ryzen 7 3700X`
 
-### With checks enabled (without cache)
+`parallel` cf <https://www.gnu.org/software/parallel/>
+
+### With checks enabled
+
+start server: `cargo run --release res/*.txt`
 
 ```
-❯ hyperfine "cargo run --release res/*.txt -o out/*.out"
-Benchmark 1: cargo run --release res/*.txt -o out/*.out
-  Time (mean ± σ):     198.3 ms ±   1.1 ms    [User: 175.3 ms, System: 22.3 ms]
-  Range (min … max):   196.3 ms … 201.6 ms    15 runs
-```
-
-### With checks disabled (without cache)
-
-```
-❯ hyperfine "cargo run --release res/*.txt -o out/*.out --disable-checks"
-Benchmark 1: cargo run --release res/*.txt -o out/*.out --disable-checks
-  Time (mean ± σ):     184.9 ms ±   4.1 ms    [User: 162.5 ms, System: 21.8 ms]
-  Range (min … max):   181.4 ms … 197.8 ms    15 runs
-```
-
-### With checks enabled (with cache)
-
-Prerequisite: run once with `cargo run --release res/*.txt -o out/*.out --disable-checks --cache` (generate `.bin` files)
-
-```
-❯ hyperfine "cargo run --release res/*.bin -o out/*.out"
-Benchmark 1: cargo run --release res/*.bin -o out/*.out
-  Time (mean ± σ):     125.4 ms ±   1.1 ms    [User: 109.0 ms, System: 16.0 ms]
-  Range (min … max):   124.2 ms … 128.3 ms    23 runs
+❯ hyperfine "./parallel -a curls_benchmark.txt"
+Benchmark 1: ./parallel -a curls_benchmark.txt
+  Time (mean ± σ):     100.4 ms ±   5.8 ms    [User: 77.3 ms, System: 40.9 ms]
+  Range (min … max):    93.7 ms … 110.2 ms    29 runs
 ```
 
 ### With checks disabled (with cache)
 
-Prerequisite: run once with `cargo run --release res/*.txt -o out/*.out --disable-checks --cache` (generate `.bin` files)
+start server: `cargo run --release res/*.txt --disable-checks`
 
 ```
-❯ hyperfine "cargo run --release res/*.bin -o out/*.out --disable-checks"
-Benchmark 1: cargo run --release res/*.bin -o out/*.out --disable-checks
-  Time (mean ± σ):     110.4 ms ±   1.9 ms    [User: 91.6 ms, System: 18.5 ms]
-  Range (min … max):   107.7 ms … 115.4 ms    26 runs
+❯ hyperfine "./parallel -a curls_benchmark.txt"
+Benchmark 1: ./parallel -a curls_benchmark.txt
+  Time (mean ± σ):      92.3 ms ±   5.3 ms    [User: 77.2 ms, System: 40.3 ms]
+  Range (min … max):    85.6 ms … 101.4 ms    29 runs
 ```
 
 ## Enable debug logs
 
 ```
-RUST_LOG=debug cargo run res/a_an_example.in.txt -o out/a_an_example.in.txt.out
+RUST_LOG=debug cargo run --release res/*.txt
 ```
 
 ## License
