@@ -50,6 +50,10 @@ total score: 2,745,857
 
 cpu: `AMD Ryzen 7 3700X`
 
+Need to go **x2 faster** ?
+
+This [branch](https://github.com/PicoJr/google-hashcode-score-2022/tree/feat-use-warp) implements a web server (using [warp](https://github.com/seanmonstar/warp)) that handle submissions asynchronously.
+
 ### With checks enabled (without cache)
 
 ```
